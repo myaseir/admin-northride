@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   ShieldCheck, Users, CreditCard, 
-  LogOut, Activity, BarChart3, Bell, Terminal, Wallet
+  LogOut, Activity, BarChart3, Bell, Terminal, Wallet, Rocket
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import DriverVerificationTab from './components/DriverVerificationTab';
 import BookingVerificationTab from './components/BookingVerificationTab';
-import AdminPayoutDashboard from './components/AdminPayoutDashboard'; // 🎯 IMPORT ADDED
+import AdminPayoutDashboard from './components/AdminPayoutDashboard';
+import BulkSeedForm from './components/BulkSeedForm'; // 🎯 GHOST FLEET IMPORT
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('drivers'); 
@@ -39,12 +40,12 @@ export default function AdminPanel() {
   return (
     <div className="min-h-screen bg-[#F9FBFC] text-slate-900 font-sans selection:bg-emerald-100">
       
-      {/* --- REFINED TOP NAVIGATION (NO DIVIDERS) --- */}
-      <header className="bg-white/70 backdrop-blur-xl sticky top-0 z-50 px-4">
-        <div className="max-w-7xl mx-auto h-20 flex items-center justify-between">
+      {/* --- REFINED TOP NAVIGATION --- */}
+      <header className="bg-white/70 backdrop-blur-xl sticky top-0 z-50 px-4 border-b border-slate-100/50">
+        <div className="max-w-7xl mx-auto h-20 flex items-center justify-between gap-4">
           
           {/* Brand Section */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <div className="w-10 h-10 bg-slate-950 rounded-2xl flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-500/10 active:scale-95 transition-transform">
               <ShieldCheck size={20} />
             </div>
@@ -62,7 +63,7 @@ export default function AdminPanel() {
           </div>
 
           {/* Floating Pill Switcher */}
-          <nav className="flex items-center gap-1 bg-slate-900/5 p-1.5 rounded-2xl">
+          <nav className="flex items-center gap-1 bg-slate-900/5 p-1.5 rounded-2xl overflow-x-auto scrollbar-none max-w-full">
             <TabButton 
               active={activeTab === 'drivers'} 
               onClick={() => setActiveTab('drivers')}
@@ -75,17 +76,23 @@ export default function AdminPanel() {
               icon={<CreditCard size={14} />}
               label="Payments"
             />
-            {/* 🎯 NEW SETTLEMENTS TAB */}
             <TabButton 
               active={activeTab === 'payouts'} 
               onClick={() => setActiveTab('payouts')}
               icon={<Wallet size={14} />}
               label="Settlements"
             />
+            {/* 🎯 SEEDING MANAGEMENT DRIVER PILL */}
+            <TabButton 
+              active={activeTab === 'ghost-fleet'} 
+              onClick={() => setActiveTab('ghost-fleet')}
+              icon={<Rocket size={14} />}
+              label="Ghost Fleet"
+            />
           </nav>
 
           {/* Action Cluster */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button className="p-2.5 text-slate-400 hover:text-slate-950 transition-all rounded-xl hover:bg-slate-100">
                <Bell size={18} />
             </button>
@@ -111,29 +118,35 @@ export default function AdminPanel() {
                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Operational Update</span>
             </div>
             <h2 className="text-3xl font-black text-slate-950 tracking-tight uppercase italic">
-              {/* 🎯 DYNAMIC TITLE UPDATE */}
-              {activeTab === 'drivers' ? 'Identity' : activeTab === 'bookings' ? 'Ledger' : 'Settlement'} <span className="text-slate-400">Audit</span>
+              {activeTab === 'drivers' 
+                ? 'Identity' 
+                : activeTab === 'bookings' 
+                ? 'Ledger' 
+                : activeTab === 'payouts' 
+                ? 'Settlement' 
+                : 'Marketplace'} <span className="text-slate-400">Audit</span>
             </h2>
           </div>
 
           {/* Live Stats Dock */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 self-start md:self-auto">
              <QuickStat icon={<Activity size={12}/>} label="Status" value="Online" color="emerald" />
              <QuickStat icon={<BarChart3 size={12}/>} label="Traffic" value="Nominal" color="blue" />
           </div>
         </div>
 
-        {/* Component Display */}
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-           {/* 🎯 TAB RENDERING LOGIC */}
+        {/* Component Display Grid */}
+        <div className="transition-all duration-500 ease-in-out">
            {activeTab === 'drivers' && <DriverVerificationTab />}
            {activeTab === 'bookings' && <BookingVerificationTab />}
            {activeTab === 'payouts' && <AdminPayoutDashboard />}
+           {/* 🎯 RENDER CONCIERGE SCHEDULER */}
+           {activeTab === 'ghost-fleet' && <BulkSeedForm />}
         </div>
       </main>
 
-      <footer className="py-10 text-center">
-        <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">GlaciaGo Administrative Protocol v4.0.2</p>
+      <footer className="py-10 text-center mt-20">
+        <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">GlaciaLabs Administrative Protocol v4.1.0</p>
       </footer>
     </div>
   );
@@ -145,13 +158,13 @@ function TabButton({ active, onClick, icon, label }) {
   return (
     <button 
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-500 ${
+      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 shrink-0 select-none ${
         active 
-          ? 'bg-white text-slate-950 shadow-sm' 
+          ? 'bg-white text-slate-950 shadow-sm border border-slate-100' 
           : 'text-slate-500 hover:text-slate-800'
       }`}
     >
-      {icon} <span className="hidden xs:inline">{label}</span>
+      {icon} <span>{label}</span>
     </button>
   );
 }
@@ -163,7 +176,7 @@ function QuickStat({ icon, label, value, color }) {
   };
 
   return (
-    <div className={`px-4 py-2 rounded-2xl border flex items-center gap-3 transition-all hover:scale-105 ${themes[color]}`}>
+    <div className={`px-4 py-2 rounded-2xl border flex items-center gap-3 transition-all hover:scale-105 select-none ${themes[color]}`}>
       <div className="opacity-80">{icon}</div>
       <div className="flex flex-col">
         <span className="text-[7px] font-black uppercase opacity-60 tracking-tighter leading-none mb-0.5">{label}</span>
