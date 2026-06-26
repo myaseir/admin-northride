@@ -50,14 +50,15 @@ export default function BulkSeedForm() {
 
     try {
         const token = localStorage.getItem("token");
-     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/admin/bulk-seed`, {
+    // Change this line in BulkSeedForm.tsx
+const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/bulk-seed`, {
   method: "POST",
-  headers: { "Content-Type": "application/json" ,
-    "Authorization": `Bearer ${token}`
+  headers: { 
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}` 
   },
   body: JSON.stringify(payload),
 });
-
       if (!response.ok) throw new Error("Seeding operation failed.");
       
       const data = await response.json();
