@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Loader2, Banknote, User, Phone, 
-  CreditCard, Receipt, CheckCircle2, XCircle, AlertCircle
+  CreditCard, CheckCircle2, XCircle, AlertCircle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -11,6 +11,7 @@ export default function AdminPayoutDashboard() {
   const [payouts, setPayouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(7);
   
   // Track transfer reference inputs for each row
   const [transferRefs, setTransferRefs] = useState({});
@@ -24,6 +25,8 @@ export default function AdminPayoutDashboard() {
 
       if (res.ok) {
         const data = await res.json();
+        // We just save the raw data to state. 
+        // The actual sorting happens down in the return statement now.
         setPayouts(data);
       } else {
         toast.error("Failed to load pending payouts.");
@@ -129,113 +132,129 @@ export default function AdminPayoutDashboard() {
         </div>
       ) : (
         <div className="space-y-4">
-          {payouts.map((payout) => (
-            <div key={payout.id} className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col lg:flex-row transition-all hover:shadow-md">
-              
-              {/* LEFT: Driver & Account Details */}
-              <div className="p-6 bg-slate-50 border-b lg:border-b-0 lg:border-r border-slate-200 flex-1">
-                <div className="flex items-center gap-2 mb-4">
-                  <User size={16} className="text-slate-400" />
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">{payout.driver_name}</h3>
-                </div>
+          
+          {/* 🎯 FORCE SORT HERE: Always newest first by ID */}
+          {[...payouts]
+            .sort((a, b) => {
+              if (a.id && b.id) return b.id.localeCompare(a.id);
+              return 0;
+            })
+            .slice(0, visibleCount)
+            .map((payout) => (
+              <div key={payout.id} className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col lg:flex-row transition-all hover:shadow-md">
                 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone size={14} className="text-slate-400" />
-                    <span className="font-bold text-slate-600">{payout.driver_phone}</span>
+                {/* LEFT: Driver & Account Details */}
+                <div className="p-6 bg-slate-50 border-b lg:border-b-0 lg:border-r border-slate-200 flex-1">
+                  <div className="flex items-center gap-2 mb-4">
+                    <User size={16} className="text-slate-400" />
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">{payout.driver_name}</h3>
                   </div>
                   
-                  <div className="bg-white p-3 rounded-xl border border-slate-200 mt-2">
-                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1 flex items-center gap-1">
-                      <CreditCard size={12} /> Transfer Destination
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone size={14} className="text-slate-400" />
+                      <span className="font-bold text-slate-600">{payout.driver_phone}</span>
+                    </div>
+                    
+                    <div className="bg-white p-3 rounded-xl border border-slate-200 mt-2">
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1 flex items-center gap-1">
+                        <CreditCard size={12} /> Transfer Destination
+                      </p>
+                      <p className="text-sm font-black text-slate-900">
+                        {payout.payout_method || "Bank Transfer"}
+                      </p>
+                      <p className="text-xs font-bold text-slate-500 font-mono mt-0.5">
+                        {payout.payout_account || "No Account Provided"}
+                      </p>
+                    </div>
+                    
+                    <p className="text-[10px] font-bold text-slate-400 uppercase pt-2">
+                      Trip Ref: {payout.trip_id?.slice(-6).toUpperCase() || "N/A"} • Passenger: {payout.passenger_name}
                     </p>
-                    <p className="text-sm font-black text-slate-900">
-                      {payout.payout_method || "Bank Transfer"}
-                    </p>
-                    <p className="text-xs font-bold text-slate-500 font-mono mt-0.5">
-                      {payout.payout_account || "No Account Provided"}
-                    </p>
-                  </div>
-                  
-                  <p className="text-[10px] font-bold text-slate-400 uppercase pt-2">
-                    Trip Ref: {payout.trip_id.slice(-6).toUpperCase()} • Passenger: {payout.passenger_name}
-                  </p>
-                </div>
-              </div>
-
-             {/* MIDDLE: Financial Math */}
-<div className="p-6 flex-1 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-slate-200">
-  <div className="space-y-2">
-    <div className="flex justify-between items-center text-sm">
-      <span className="font-bold text-slate-500">Collected Advance</span>
-      {/* 🎯 THE FIX: Added fallback to 0 before calling toLocaleString */}
-      <span className="font-black text-slate-900">
-        PKR {(payout.advance_paid || 0).toLocaleString()}
-      </span>
-    </div>
-    <div className="flex justify-between items-center text-sm">
-      <span className="font-bold text-rose-500 flex items-center gap-1">
-        Platform Fee (5%)
-      </span>
-      <span className="font-black text-rose-600">
-        - PKR {(payout.commission_fee || 0).toLocaleString()}
-      </span>
-    </div>
-    
-    <div className="h-px w-full bg-slate-200 my-2" />
-    
-    <div className="flex justify-between items-center">
-      <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1">
-        <Banknote size={14} /> Net Payout
-      </span>
-      <span className="text-2xl font-black text-emerald-600 tracking-tighter">
-        <span className="text-[10px] font-sans text-emerald-500 mr-1 uppercase">PKR</span>
-        {/* 🎯 THE FIX: Added fallback to 0 */}
-        {(payout.net_payout || 0).toLocaleString()}
-      </span>
-    </div>
-  </div>
-</div>
-
-              {/* RIGHT: Action Panel */}
-              <div className="p-6 bg-slate-900 flex-1 flex flex-col justify-center">
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">
-                      Bank Transfer Reference ID
-                    </label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. TRX-998234"
-                      value={transferRefs[payout.id] || ""}
-                      onChange={(e) => handleRefChange(payout.id, e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
-                    />
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      onClick={() => handleProcessPayout(payout.id, 'credit')}
-                      disabled={processingId === payout.id}
-                      className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs uppercase tracking-widest py-3 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {processingId === payout.id ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                      Mark Paid
-                    </button>
-                    <button
-                      onClick={() => handleProcessPayout(payout.id, 'reject')}
-                      disabled={processingId === payout.id}
-                      className="px-4 bg-slate-800 hover:bg-rose-500/20 hover:text-rose-500 text-slate-400 font-black rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center"
-                      title="Reject Payout"
-                    >
-                      <XCircle size={18} />
-                    </button>
                   </div>
                 </div>
-              </div>
 
-            </div>
-          ))}
+                {/* MIDDLE: Financial Math */}
+                <div className="p-6 flex-1 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-slate-200">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-bold text-slate-500">Collected Advance</span>
+                      <span className="font-black text-slate-900">
+                        PKR {(payout.advance_paid || 0).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-bold text-rose-500 flex items-center gap-1">
+                        Platform Fee (5%)
+                      </span>
+                      <span className="font-black text-rose-600">
+                        - PKR {(payout.commission_fee || 0).toLocaleString()}
+                      </span>
+                    </div>
+                    
+                    <div className="h-px w-full bg-slate-200 my-2" />
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1">
+                        <Banknote size={14} /> Net Payout
+                      </span>
+                      <span className="text-2xl font-black text-emerald-600 tracking-tighter">
+                        <span className="text-[10px] font-sans text-emerald-500 mr-1 uppercase">PKR</span>
+                        {(payout.net_payout || 0).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* RIGHT: Action Panel */}
+                <div className="p-6 bg-slate-900 flex-1 flex flex-col justify-center">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">
+                        Bank Transfer Reference ID
+                      </label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. TRX-998234"
+                        value={transferRefs[payout.id] || ""}
+                        onChange={(e) => handleRefChange(payout.id, e.target.value)}
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                      />
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={() => handleProcessPayout(payout.id, 'credit')}
+                        disabled={processingId === payout.id}
+                        className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs uppercase tracking-widest py-3 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {processingId === payout.id ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                        Mark Paid
+                      </button>
+                      <button
+                        onClick={() => handleProcessPayout(payout.id, 'reject')}
+                        disabled={processingId === payout.id}
+                        className="px-4 bg-slate-800 hover:bg-rose-500/20 hover:text-rose-500 text-slate-400 font-black rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center"
+                        title="Reject Payout"
+                      >
+                        <XCircle size={18} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            ))}
+
+          {/* 🎯 Load More Button */}
+          {visibleCount < payouts.length && (
+            <button 
+              onClick={() => setVisibleCount(prev => prev + 7)}
+              className="w-full py-4 border-2 border-dashed border-slate-300 rounded-[2rem] text-slate-500 font-black text-xs uppercase tracking-widest hover:border-emerald-500 hover:text-emerald-600 transition-all active:scale-95"
+            >
+              Load More Payouts ({payouts.length - visibleCount} remaining)
+            </button>
+          )}
         </div>
       )}
     </div>
