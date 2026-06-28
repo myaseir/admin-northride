@@ -43,7 +43,7 @@ export default function LoginPage() {
     // 1. Check for Admin Access (Highest Priority)
     if (roles.includes("ADMIN")) {
       toast.success("Welcome, Administrator");
-      router.replace("/admin"); // Redirects to your AdminPanel
+      router.replace("/"); // Redirects to your AdminPanel
       return;
     }
 
