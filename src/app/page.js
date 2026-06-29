@@ -14,7 +14,7 @@ import BookingVerificationTab from './components/BookingVerificationTab';
 import AdminPayoutDashboard from './components/AdminPayoutDashboard';
 import BulkSeedForm from './components/BulkSeedForm'; 
 import AdminFleetDashboard from './components/AdminFleetDashboard';
-
+import OneSignalInit from './components/OneSignalInit';
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('drivers'); 
   const [adminData, setAdminData] = useState(null);
@@ -62,8 +62,9 @@ export default function AdminPanel() {
   }
 
   return (
+    
     <div className="min-h-screen bg-[#F9FBFC] text-slate-900 font-sans selection:bg-emerald-100 antialiased">
-      
+      <OneSignalInit />
       {/* --- REFINED TOP NAVIGATION --- */}
       <header className="bg-white/70 backdrop-blur-xl sticky top-0 z-50 px-4 border-b border-slate-100/50">
         <div className="max-w-7xl mx-auto h-20 flex items-center justify-between gap-4">
